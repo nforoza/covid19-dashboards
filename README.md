@@ -1,4 +1,4 @@
-[![noforza](https://circleci.com/gh/nforoza/microservices-kubernetes.svg?style=svg)](https://github.com/nforoza/microservices-kubernetes)
+[![noforza](https://circleci.com/gh/nforoza/covid19-dashboards.svg?style=svg)](https://github.com/nforoza/covid19-dashboards)
 
 ![Python](https://img.shields.io/badge/python-v3.7+-blue.svg)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
