@@ -42,6 +42,20 @@ Docker container definition for running the house price predictor service.
 
 * `requirements.txt` Python libraries dependencies.
 
+## Bokeh aplication files
+
+* An __init__.py file that marks this directory as a package. Package relative imports, e.g. from . import mymod and from .mymod import func will be possible.
+
+* A request_handler.py file that allows declaring an optional function which processes the HTTP request and returns a dictionary of items to be included in the session token, as described in Request Handler Hooks.
+
+* A app_hooks.py file that allows optional callbacks to be triggered at different stages of application execution, as described in Lifecycle Hooks and Request Handler Hooks.
+
+* A static subdirectory that can be used to serve static resources associated with this application.
+
+* A theme.yaml file that declaratively defines default attributes to be applied to Bokeh model types.
+
+* A templates subdirectory with index.html Jinja template file. The directory may contain additional Jinja templates for index.html to refer to. The template should have the same parameters as the FILE template. See Customizing the Application’s Jinja Template for more details.
+
 ## Resources
 ### Datasets
 

@@ -1,8 +1,8 @@
-FROM python:3.7.3-stretch
+FROM python:3.8-buster
 
 ## Step 1:
 # Create a working directory
-WORKDIR /app 
+WORKDIR /app/
 ## Step 2:
 # Copy source code to working directory
 COPY . /app/
@@ -13,9 +13,9 @@ RUN make install
 # hadolint ignore=DL3013
 
 ## Step 4:
-# Expose port 80
-EXPOSE 80
+# Expose port 
+EXPOSE 8080
 
 ## Step 5:
-# Run app.py at container launch
-CMD ["python","app.py"]
+# Run  bokeh server at container launch
+CMD ["python","/app/app.py"]
