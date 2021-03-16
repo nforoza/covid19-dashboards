@@ -1,16 +1,10 @@
 #Base libraries
-from datetime import datetime
 import numpy as np
-import pandas as pd
-import random
 
 #Bokeh Libraries
-from bokeh.layouts import gridplot
-from bokeh.io import curdoc
-from bokeh.layouts import column, row
-from bokeh.models import ColumnDataSource, DataRange1d, Select
-from bokeh.palettes import Blues4
-from bokeh.plotting import figure, show
+from bokeh.layouts import column
+from bokeh.models import ColumnDataSource, Select
+from bokeh.plotting import figure
 
 
 class Dashboard:
@@ -18,6 +12,7 @@ class Dashboard:
         self._title=title
         self._df=df
         self._source=ColumnDataSource()
+        self._country_select=Select(title="Country:", value="Argentina")
     
     
     def _datetime(self,x):
@@ -29,7 +24,7 @@ class Dashboard:
         dashboard_selections={}
         df=self._df
         countries=sorted(df.location.unique())
-        self._country_select = Select(title="Country:", value="Argentina", options=countries)
+        self._country_select.options=countries
         self._country_select.on_change('value',self.update_plot)
         dashboard_selections['country']=self._country_select
         return dashboard_selections
@@ -43,10 +38,7 @@ class Dashboard:
         #Controls
         dashboard_selections=self._extract_selections()
         selection_controls=column(dashboard_selections['country'])
-        #df=self._df
-        #df.set_index(df['location'],inplace=True)
-        #data=df.loc['Argentina'][['date','total_cases_per_million']]
-        self._source.data=self.filter_data("Argentina")
+        self._source.data=self.filter_data(country)
         self._source.data['date']=self._datetime(self._source.data['date'])
         plot.line(x="date",y="total_cases_per_million",color='#FF11AA',legend_label=self._title,source=self._source)
         return column([selection_controls,plot])
@@ -60,9 +52,9 @@ class Dashboard:
 
 
     def update_plot(self,attrname, old, new):
-        country = self._country_select.value
+        print(attrname,old,new)
+        country = new
         data=self.filter_data(country)
         data['date']=self._datetime(data['date'])
-        #src = get_dataset(df, cities[city]['airport'], distribution_select.value)
         self._source.data.update(data)
 

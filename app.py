@@ -4,7 +4,6 @@ import pandas as pd
 from bokeh.server.server import Server
 from dashboards.covid_dashboard import Dashboard
 
-#TODO take this parameters to a configuration file
 COVID_URL="https://github.com/owid/covid-19-data/raw/master/public/data/owid-covid-data.csv"
 DESTINY_FOLDER="./owid-covid-data.csv"
 COLUMNS=['location','date','total_cases_per_million']
@@ -15,18 +14,17 @@ def render_doc(doc):
     return
 
 def get_dataset(url,destiny,columns):
-        '''Retrieves dataset from url a stores it in destiny folder
-            Parameters:
-                url (string): URL to retrieve csv
-
-            Returns:
-                Pandas Dataframe:Returning value
-        '''
-        try:
-            urllib.request.urlretrieve(url,destiny)
-            return pd.read_csv(destiny)[columns]
-        except urlerrors.HTTPError as e:
-            print("HTTP error, probably the url is not available:",e)
+    '''Retrieves dataset from url a stores it in destiny folder
+    Parameters:
+    url (string): URL to retrieve csv
+    Returns:
+    Pandas Dataframe:Returning value
+    '''
+    try:
+        urllib.request.urlretrieve(url,destiny)
+        return pd.read_csv(destiny)[columns]
+    except urlerrors.HTTPError as e:
+        print("HTTP error, probably the url is not available:",e)
 
 print("Refreshing Data")
 data=get_dataset(COVID_URL,DESTINY_FOLDER,COLUMNS)
