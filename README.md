@@ -59,6 +59,9 @@ Docker container definition for running the house price predictor service.
 ## Resources
 ### Datasets
 
+### Data on COVID-19 (coronavirus) by Our World in Data
+* https://github.com/owid/covid-19-data/tree/master/public/data
+
 ## License
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
