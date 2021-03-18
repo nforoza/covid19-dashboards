@@ -3,11 +3,37 @@
 # Check https://circleci.com/docs/2.0/language-python/ for more details
 #
 version: 2
+orbs:
+    #Slack notifications capabilities
+    slack: circleci/slack@4.1.4
+
+commands:
+  destroy-environment:
+    description: Destroy kubernetes cluster stacks given a workflow ID.
+    parameters:
+     workflow-id:
+        type: string 
+    steps:
+      - run:
+          name: Destroy frontend environment
+          when: on_fail
+          command: |
+            aws s3 rm "s3://udapeople-<<parameters.workflow-id>>/" --recursive
+            aws cloudformation delete-stack \
+              --stack-name "udapeople-front-end-<<parameters.workflow-id>>"
+      - run:
+          name: Destroy backend environmet
+          when: on_fail
+          command: |
+            aws cloudformation delete-stack \
+              --stack-name "udapeople-back-end-<<parameters.workflow-id>>"
+
+
 jobs:
-  build:
+  lint:
     docker:
-    # Use the same Docker base as the project
-      - image: python:3.7.3-stretch
+      # Use the same Docker base as the project
+      - image: python:3.8-buster
 
     working_directory: ~/repo
 
@@ -20,7 +46,7 @@ jobs:
             - v1-dependencies-{{ checksum "requirements.txt" }}
             # fallback to using the latest cache if no exact match is found
             - v1-dependencies-
-
+      
       - run:
           name: install dependencies
           command: |
@@ -35,9 +61,115 @@ jobs:
             - ./venv
           key: v1-dependencies-{{ checksum "requirements.txt" }}
 
-      # run lint!
+      # run lint
       - run:
           name: run lint
           command: |
             . venv/bin/activate
-            make lint 
+            make lint
+            
+  build-push-docker:
+   machine: true
+   steps:
+     - checkout
+     # Authenticate
+     - run: 
+          name: Authenticate Docker Hub
+          command: |
+            echo "$DOCKER_PASS" | docker login --username $DOCKER_USER --password-stdin
+     # Tag Build and Push
+     - run:
+          name: 
+          command: |
+            TAG=0.1.$CIRCLE_BUILD_NUM
+            docker build build -t covid19dashboard:$TAG .
+            echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+            docker push $DOCKER_PATH:$TAG    
+
+  deploy-infraestructure:
+   docker:
+    - image: amazon/aws-cli
+   steps:
+    # Checkout code from git
+    - checkout
+    
+    # Tools
+    - run:
+        name: Install tar and gzip
+        command: |
+          yum -y install  tar gzip unzip
+
+    # Update Aws Cli to v2
+    - run:
+        name: Download aws cli2
+        command: |
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          sudo ./aws/install --bin-dir /usr/bin --install-dir /usr/bin/aws-cli --update
+          aws --version
+
+    - run:
+          name: Bucket for Covid19 dataset
+          command: |
+            aws cloudformation deploy \
+              --template-file .circleci/files/s3bucket.yml \
+              --tags project=$CIRCLE_PROJECT_REPONAME \
+              --stack-name "covid19databucket-$CIRCLE_WORKFLOW_ID" \
+              --parameter-overrides ID="$CIRCLE_WORKFLOW_ID"
+    
+    - run:
+          name: Install kubectl
+          command: |
+            curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.16.8/2020-04-16/bin/linux/amd64/kubectl
+            chmod +x ./kubectl
+            mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$PATH:$HOME/bin
+            kubectl version --short --client
+     
+     - run:
+          name: Install eksctl
+          command: |
+            curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+            sudo mv /tmp/eksctl /usr/bin
+            eksctl version 
+     
+     - run: 
+          name: Provision an EKS Cluster
+          command: | 
+            eksctl create cluster --name "dashboard-cluster-$CIRCLE_WORKFLOW_ID" --version 1.16 --region us-east-1 --nodegroup-name standard-workers --node-type t3.micro --nodes 2 --nodes-min 1 --nodes-max 4 --managed
+     
+     - run: 
+          name: Connect to our cluster
+          command: | 
+            aws eks update-kubeconfig --name "dashboard-cluster-$CIRCLE_WORKFLOW_ID" --region us-east-1
+      
+     - run: 
+          name: Create service
+          command: | 
+            kubectl apply -f ./dashboard-svc.yml
+            kubectl get service
+     
+     - run: 
+          name: Create deployment
+          command: | 
+            kubectl apply -f ./dashboard-deployment.yml
+            kubectl get deployment 
+  
+  upload-last-covid-data:
+    docker:
+      - image: amazon/aws-cli
+      - run:
+          name: Upload last published Covid Data to S3 bucket
+          command: |
+            curl $COVID_DATASET_URL | aws s3 cp - s3://covid19data-$CIRCLE_WORKFLOW_ID/owid-covid-data.csv
+
+  workflows:
+  default:
+    jobs:
+      - lint
+      - build-push-docker:
+          requires: [lint]
+      - deploy-infraestructure:
+          requires: [build-push-docker]
+      - upload-last-covid-data:
+          requires: [upload-last-covid-data]
+

@@ -1,0 +1,45 @@
+Description: >
+  UdaPeople frontend stack.
+
+Parameters:
+  ID:
+    Description: Unique identifier.
+    Type: String
+
+Resources:
+  Covid19DataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "covid19data-${ID}"
+      AccessControl: PublicRead
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - '*'
+            AllowedMethods:
+              - GET
+            AllowedOrigins:
+              - '*'
+            ExposedHeaders: []
+            Id: myCORSRuleId1
+            MaxAge: '3600'
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: 404.html
+  
+  Covid19DataBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref 'Covid19DataBucket'
+      PolicyDocument:
+        Statement:
+        - Sid: PublicReadForGetBucketObjects
+          Effect: Allow
+          Principal: '*'
+          Action: s3:GetObject
+          Resource: !Join ['', ['arn:aws:s3:::', !Ref 'Covid19DataBucket', /*]]
+
+Outputs:
+  WebsiteURL:
+    Value: !GetAtt Covid19DataBucket.WebsiteURL
+    Description: URL for website hosted on S3
