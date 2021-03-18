@@ -1,5 +1,6 @@
 #Base libraries
 import numpy as np
+import logging
 
 #Bokeh Libraries
 from bokeh.layouts import column
@@ -13,6 +14,12 @@ class Dashboard:
         self._df=df
         self._source=ColumnDataSource()
         self._country_select=Select(title="Country:", value="Argentina")
+        # Logging configurations
+        # create logger
+        self._logger = logging.getLogger('Dashboard')
+        self._logger.setLevel(logging.INFO)
+ 
+ 
     
     
     def _datetime(self,x):
@@ -52,7 +59,7 @@ class Dashboard:
 
 
     def update_plot(self,attrname, old, new):
-        print(attrname,old,new)
+        self._logger.info(f"Updating dashboard data to {new}")
         country = new
         data=self.filter_data(country)
         data['date']=self._datetime(data['date'])

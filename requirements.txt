@@ -1,6 +1,7 @@
 astroid==2.5
 bokeh==2.3.0
 colorama==0.4.4
+fsspec==0.8.7
 isort==5.7.0
 Jinja2==2.11.3
 lazy-object-proxy==1.5.2
