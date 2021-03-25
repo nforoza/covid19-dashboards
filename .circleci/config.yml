@@ -1,5 +1,9 @@
 version: 2.1
 
+orbs:
+  aws-ecr: circleci/aws-ecr@6.15.3 # Use the AWS ECR orb in your config
+  aws-ecs: circleci/aws-ecs@2.1.0 # Use the AWS ECS orb in your config
+
 jobs:
   lint:
     docker:
@@ -28,7 +32,11 @@ jobs:
       - run:
           name: Install Docker Cli
           command: |
-            sudo apt-get install docker-cli
+            yum install -y yum-utils
+            yum-config-manager \
+            --add-repo \
+            https://download.docker.com/linux/centos/docker-ce.repo
+            
           
       - run: |
           aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 273846295010.dkr.ecr.us-east-1.amazonaws.com
@@ -98,8 +106,15 @@ workflows:
    main:
      jobs:
        - lint
-       - push-image:
-           requires: [lint]
-       - deploy-infraestructure:
-           requires: [push-image]
-
+       - aws-ecr/build-and-push-image:
+          dockerfile: Dockerfile
+          path: ~/repo/
+          profile-name: AWS
+          repo: covid19-dashboard
+          tag: '${CIRCLE_SHA1}' 
+       - aws-ecs/deploy-service-update:
+          requires:
+            - aws-ecr/build-and-push-image # only run the deployment job once the build and push image job has completed
+          family: 'covid19-dashboard-service'
+          cluster-name: "$CIRCLE_WORKFLOW_ID-dashboard-cluster"
+          container-image-name-updates: 'container=covid19-dashboard-service,tag=${CIRCLE_SHA1}'
