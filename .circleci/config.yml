@@ -2,7 +2,6 @@ version: 2.1
 
 orbs:
   aws-ecr: circleci/aws-ecr@6.15.3 # Use the AWS ECR orb in your config
-  aws-ecs: circleci/aws-ecs@2.1.0 # Use the AWS ECS orb in your config
 
 jobs:
   lint:
@@ -19,32 +18,7 @@ jobs:
             make install
             make lint
 
-  push-image:
-    docker:
-      - image: amazon/aws-cli
-    steps:
-      - checkout
-      
-      # The below step is CircleCi to create a remote, fully-isolated enviroment configured to execute Docker commands.
-      - setup_remote_docker:
-          version: 19.03.13
-
-      - run:
-          name: Install Docker Cli
-          command: |
-            yum install -y yum-utils
-            yum-config-manager \
-            --add-repo \
-            https://download.docker.com/linux/centos/docker-ce.repo
-            
-          
-      - run: |
-          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 273846295010.dkr.ecr.us-east-1.amazonaws.com
-          docker build -t covid19-dashboard .
-          docker tag covid19-dashboard:latest 273846295010.dkr.ecr.us-east-1.amazonaws.com/covid19-dashboard:latest
-          docker push 273846295010.dkr.ecr.us-east-1.amazonaws.com/covid19-dashboard:latest
-  
-  deploy-infraestructure:
+  deploy-kubernetes:
     docker:
     - image: amazon/aws-cli
     steps:
@@ -83,12 +57,12 @@ jobs:
     - run: 
         name: Provision an EKS Cluster
         command: | 
-            eksctl create cluster --name "dashboard-cluster-$CIRCLE_WORKFLOW_ID" --version 1.16 --region us-east-1 --nodegroup-name standard-workers --node-type t3.micro --nodes 2 --nodes-min 1 --nodes-max 4 --managed
+            eksctl create cluster --name "dashboard-cluster-$CIRCLE_WORKFLOW_ID" --version 1.16 --region $AWS_REGION --nodegroup-name standard-workers --node-type t3.micro --nodes 2 --nodes-min 1 --nodes-max 4 --managed
      
     - run: 
         name: Connect to our cluster
         command: | 
-            aws eks update-kubeconfig --name "dashboard-cluster-$CIRCLE_WORKFLOW_ID" --region us-east-1
+            aws eks update-kubeconfig --name "dashboard-cluster-$CIRCLE_WORKFLOW_ID" --region $AWS_REGION
       
     - run: 
         name: Create service
@@ -107,14 +81,13 @@ workflows:
      jobs:
        - lint
        - aws-ecr/build-and-push-image:
+          requires:
+            - lint
           dockerfile: Dockerfile
           path: ~/project/
           profile-name: AWS
           repo: covid19-dashboard
-          tag: '${CIRCLE_SHA1}' 
-       - aws-ecs/deploy-service-update:
+          tag: '${CIRCLE_SHA1}'
+       - deploy-kubernetes:
           requires:
-            - aws-ecr/build-and-push-image # only run the deployment job once the build and push image job has completed
-          family: 'covid19-dashboard-service'
-          cluster-name: "$CIRCLE_WORKFLOW_ID-dashboard-cluster"
-          container-image-name-updates: 'container=covid19-dashboard-service,tag=${CIRCLE_SHA1}'
+            - aws-ecr/build-and-push-image
