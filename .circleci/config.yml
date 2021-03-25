@@ -1,27 +1,5 @@
 version: 2.1
 
-commands:
-  destroy-environment:
-    description: Destroy kubernetes cluster stacks given a workflow ID.
-    parameters:
-     workflow-id:
-        type: string 
-    steps:
-      - run:
-          name: Destroy frontend environment
-          when: on_fail
-          command: |
-            aws s3 rm "s3://udapeople-<<parameters.workflow-id>>/" --recursive
-            aws cloudformation delete-stack \
-              --stack-name "udapeople-front-end-<<parameters.workflow-id>>"
-      - run:
-          name: Destroy backend environmet
-          when: on_fail
-          command: |
-            aws cloudformation delete-stack \
-              --stack-name "udapeople-back-end-<<parameters.workflow-id>>"
-
-
 jobs:
   lint:
     docker:
@@ -116,12 +94,12 @@ jobs:
             kubectl apply -f ./dashboard-deployment.yml
             kubectl get deployment 
 
-  workflows:
-    default:
-      jobs:
-        - lint
-        - push-image:
-            requires: [lint]
-        - deploy-infraestructure:
-            requires: [push-image]
+ workflows:
+   main:
+     jobs:
+       - lint
+       - push-image:
+           requires: [lint]
+       - deploy-infraestructure:
+           requires: [push-image]
 
