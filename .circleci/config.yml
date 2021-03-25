@@ -124,11 +124,11 @@ jobs:
             kubectl get deployment 
 
   workflows:
-  default:
-    jobs:
-      - lint
-      - build-push-docker:
-          requires: [lint]
-      - deploy-infraestructure:
-          requires: [build-push-docker]
+    deploy-dashboard:
+      jobs:
+        - lint
+        - build-push-docker:
+            requires: [lint]
+        - deploy-infraestructure:
+            requires: [build-push-docker]
 
