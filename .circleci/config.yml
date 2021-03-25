@@ -123,5 +123,5 @@ jobs:
         - push-image:
             requires: [lint]
         - deploy-infraestructure:
-            requires: [build-push-docker]
+            requires: [push-image]
 
