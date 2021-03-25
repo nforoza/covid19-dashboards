@@ -18,9 +18,6 @@ class Dashboard:
         # create logger
         self._logger = logging.getLogger('Dashboard')
         self._logger.setLevel(logging.INFO)
- 
- 
-    
     
     def _datetime(self,x):
         return np.array(x, dtype=np.datetime64)
@@ -59,9 +56,8 @@ class Dashboard:
 
 
     def update_plot(self,attrname, old, new):
-        self._logger.info(f"Updating dashboard data to {new}")
-        country = new
-        data=self.filter_data(country)
+        self._logger.info(f"Updating dashboard data to {new} from {old} attrname is {attrname}")
+        data=self.filter_data(new)
         data['date']=self._datetime(data['date'])
         self._source.data.update(data)
 

@@ -37,7 +37,7 @@ if __name__ == '__main__':
     data=df[COLUMNS]
     TITLE='Covid 19 Dashboard'
     dashboard=Dashboard(TITLE,data)
-    plot=dashboard.make_plot("Argentina")
+    plot=dashboard.make_plot("Argentina") #Defaulting to Argentina as first data 
     server = Server({'/': render_doc},port=PORT)
     logger.info(f"Opening Bokeh application on http://localhost:{PORT}")
     server.io_loop.add_callback(server.show, "/")
