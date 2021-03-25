@@ -1,11 +1,4 @@
-# Python CircleCI 2.0 configuration file
-#
-# Check https://circleci.com/docs/2.0/language-python/ for more details
-#
 version: 2.1
-orbs:
-    #Slack notifications capabilities
-    slack: circleci/slack@4.1.4
 
 commands:
   destroy-environment:
@@ -124,10 +117,10 @@ jobs:
             kubectl get deployment 
 
   workflows:
-    deploy-dashboard:
+    default:
       jobs:
         - lint
-        - build-push-docker:
+        - push-image:
             requires: [lint]
         - deploy-infraestructure:
             requires: [build-push-docker]
