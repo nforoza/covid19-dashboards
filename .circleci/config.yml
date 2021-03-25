@@ -94,7 +94,7 @@ jobs:
             kubectl apply -f ./dashboard-deployment.yml
             kubectl get deployment 
 
- workflows:
+workflows:
    main:
      jobs:
        - lint
