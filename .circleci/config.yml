@@ -23,7 +23,7 @@ jobs:
       # The below step is CircleCi to create a remote, fully-isolated enviroment configured to execute Docker commands.
       - setup_remote_docker:
           version: 19.03.13
-          docker_layer_caching: true
+
       - run: |
           aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 273846295010.dkr.ecr.us-east-1.amazonaws.com
           docker build -t covid19-dashboard .
