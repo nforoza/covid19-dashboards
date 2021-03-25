@@ -108,7 +108,7 @@ workflows:
        - lint
        - aws-ecr/build-and-push-image:
           dockerfile: Dockerfile
-          path: ~/repo/
+          path: ~/project/
           profile-name: AWS
           repo: covid19-dashboard
           tag: '${CIRCLE_SHA1}' 
