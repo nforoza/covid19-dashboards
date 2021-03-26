@@ -56,7 +56,7 @@ jobs:
         command: | 
             aws eks update-kubeconfig --name "dashboard-$CIRCLE_WORKFLOW_ID" --region $AWS_REGION
 
-     - run:
+    - run:
         name: Install kubectl create service and deployment
         command: |
             curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.16.8/2020-04-16/bin/linux/amd64/kubectl
