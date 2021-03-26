@@ -49,7 +49,7 @@ jobs:
     - run: 
         name: Provision an EKS Cluster
         command: | 
-            eksctl create cluster --name "dashboard-$CIRCLE_WORKFLOW_ID" --version 1.16 --region $AWS_REGION --zones [$AWS_ZONE1,$AWS_ZONE2] --nodegroup-name standard-workers --node-type t3.micro --nodes 2 --nodes-min 1 --nodes-max 4 --managed
+            eksctl create cluster --name "dashboard-$CIRCLE_WORKFLOW_ID" --version 1.16 --region $AWS_REGION --nodegroup-name standard-workers --node-type t3.micro --nodes 2 --nodes-min 1 --nodes-max 4 --managed
      
     - run: 
         name: Connect to our cluster
