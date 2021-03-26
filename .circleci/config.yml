@@ -72,7 +72,10 @@ workflows:
      jobs:
        - lint
        - docker/publish:
-          image: $CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME
+          requires:
+            - lint
+          image: $DOCKER_REPO
+          tag: latest
        - deploy-kubernetes:
           requires:
             - docker/publish
