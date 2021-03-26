@@ -40,14 +40,6 @@ jobs:
           aws --version
    
     - run:
-        name: Install kubectl
-        command: |
-            curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.16.8/2020-04-16/bin/linux/amd64/kubectl
-            chmod +x ./kubectl
-            mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$PATH:$HOME/bin
-            kubectl version --short --client
-     
-    - run:
         name: Install eksctl
         command: |
             curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
@@ -57,24 +49,24 @@ jobs:
     - run: 
         name: Provision an EKS Cluster
         command: | 
-            eksctl create cluster --name "dashboard-cluster-$CIRCLE_WORKFLOW_ID" --version 1.16 --region $AWS_REGION --nodegroup-name standard-workers --node-type t3.micro --nodes 2 --nodes-min 1 --nodes-max 4 --managed
+            eksctl create cluster --name "dashboard-$CIRCLE_WORKFLOW_ID" --version 1.16 --region $AWS_REGION --nodegroup-name standard-workers --node-type t3.micro --nodes 2 --nodes-min 1 --nodes-max 4 --managed
      
     - run: 
         name: Connect to our cluster
         command: | 
-            aws eks update-kubeconfig --name "dashboard-cluster-$CIRCLE_WORKFLOW_ID" --region $AWS_REGION
-      
-    - run: 
-        name: Create service
-        command: | 
+            aws eks update-kubeconfig --name "dashboard-$CIRCLE_WORKFLOW_ID" --region $AWS_REGION
+
+     - run:
+        name: Install kubectl create service and deployment
+        command: |
+            curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.16.8/2020-04-16/bin/linux/amd64/kubectl
+            chmod +x ./kubectl
+            mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$PATH:$HOME/bin
+            kubectl version --short --client
             kubectl apply -f ./dashboard-svc.yml
             kubectl get service
-     
-    - run: 
-        name: Create deployment
-        command: | 
             kubectl apply -f ./dashboard-deployment.yml
-            kubectl get deployment 
+            kubectl get deployment           
 
 workflows:
    main:
@@ -87,7 +79,7 @@ workflows:
           path: ~/project/
           profile-name: AWS
           repo: covid19-dashboard
-          tag: '${CIRCLE_SHA1}'
+          tag: 'last'
        - deploy-kubernetes:
           requires:
             - aws-ecr/build-and-push-image
