@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
       - name: covid19dashboard
-        image: 273846295010.dkr.ecr.us-east-1.amazonaws.com/covid19-dashboard:latest
+        image:  nforoza/covid19dashboard:latest
         ports:
         - containerPort: 80

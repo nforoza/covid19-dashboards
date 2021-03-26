@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  aws-ecr: circleci/aws-ecr@6.15.3 # Use the AWS ECR orb in your config
+  docker: circleci/docker@1.5.0
 
 jobs:
   lint:
@@ -71,14 +71,8 @@ workflows:
    main:
      jobs:
        - lint
-       - aws-ecr/build-and-push-image:
-          requires:
-            - lint
-          dockerfile: Dockerfile
-          path: ~/project/
-          profile-name: AWS
-          repo: covid19-dashboard
-          tag: 'last'
+       - docker/publish:
+          image: $CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME
        - deploy-kubernetes:
           requires:
-            - aws-ecr/build-and-push-image
+            - docker/publish
