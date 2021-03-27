@@ -14,7 +14,7 @@ RUN make install
 
 ## Step 4:
 # Expose port 
-EXPOSE 8080
+EXPOSE 80
 
 ## Step 5:
 # Run  bokeh server at container launch
