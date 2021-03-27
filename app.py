@@ -40,7 +40,7 @@ def render_doc(doc):
     plot=dashboard.make_plot("Argentina") #Defaulting to Argentina as first data 
     doc.add_root(plot)
     return
-server = Server({'/': render_doc},port=PORT) 
+server = Server({'/': render_doc},port=PORT,allow_websocket_origin=["*"]) 
 server.start()
 
 if __name__ == '__main__':
