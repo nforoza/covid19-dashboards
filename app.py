@@ -25,20 +25,25 @@ COVID_URL=str(config['DEFAULT']['COVID_URL'])
 logger.info(f"Dataset URL {COVID_URL}")
 PORT=int(config['DEFAULT']['PORT'])
 logger.info(f"PORT {PORT}")
+TITLE='Covid 19 Dashboard'
+COLUMNS=['location','date','total_cases_per_million']    
 
+def update_last_data(url,columns):
+    logger.info(f"Updating dataset from:{url}")
+    df=pd.read_csv(url)
+    data=df[columns].copy()
+    return data
+covid_data=update_last_data(COVID_URL,COLUMNS)
 def render_doc(doc):
-    doc.add_root(plot)
-    return
-
-if __name__ == '__main__':
-    logger.info(f"Updating dataset from:{COVID_URL}")
-    df=pd.read_csv(COVID_URL)
-    COLUMNS=['location','date','total_cases_per_million']
-    data=df[COLUMNS]
-    TITLE='Covid 19 Dashboard'
+    data=covid_data.copy()
     dashboard=Dashboard(TITLE,data)
     plot=dashboard.make_plot("Argentina") #Defaulting to Argentina as first data 
-    server = Server({'/': render_doc},port=PORT)
+    doc.add_root(plot)
+    return
+server = Server({'/': render_doc},port=PORT) 
+server.start()
+
+if __name__ == '__main__':
     logger.info(f"Opening Bokeh application on http://localhost:{PORT}")
     server.io_loop.add_callback(server.show, "/")
     server.io_loop.start()
