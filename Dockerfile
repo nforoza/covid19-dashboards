@@ -1,4 +1,4 @@
-FROM ubuntu
+FROM ubuntu:20.04
 
 #Avoid prompting for timezone nginx setup
 ENV TZ=America/Argentina/Buenos_Aires
