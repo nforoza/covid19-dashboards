@@ -14,8 +14,8 @@ COPY . /app/
 #Update OS libraries
 RUN apt update
 RUN apt -y upgrade
-RUN apt -y install make wget python3 python3-pip
-RUN apt -y install -y nginx
+RUN apt -y install make wget python3 python3-pip nginx
+RUN chmod +x ./start.sh
 ## Step 4:
 # Install App
 RUN make install
