@@ -66,7 +66,74 @@ jobs:
             kubectl apply -f .circleci/files/dashboard-svc.yml
             kubectl apply -f .circleci/files/dashboard-deployment.yml
             kubectl get service      
+  
+  smoke-test:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+       # Tools
+      - run:
+          name: Install tar and gzip
+          command: |
+            yum -y install  tar gzip unzip
+      - run: 
+          name: Connect to our cluster
+          command: | 
+              aws eks update-kubeconfig --name "dashboard-$CIRCLE_WORKFLOW_ID" --region $AWS_REGION
+      - run:
+          name: Install kubectl
+          command: |
+              curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.16.8/2020-04-16/bin/linux/amd64/kubectl
+              chmod +x ./kubectl
+      - run:
+          name: Get cluster loadbalancer external ip and run smoke test
+          command: |
+              export URL=$(kubectl get service covid19dashboard-svc --output jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+              echo "Api URL ${URL}"
+              if (curl -s ${URL} | grep "Bokeh Application"); # test if backend is running should return json with status ok
+              then
+               return 0 
+              else
+               return 1
+              fi 
 
+  cloudfront-update:
+    docker:
+      # Docker image here that supports AWS CLI
+       - image: amazon/aws-cli
+    steps:
+      # Checkout code from git
+      - checkout
+
+      - run:
+          name: Install dependencies
+          command: |
+            # your code here
+            yum -y install tar
+            yum -y install gzip
+            yum -y install curl
+      - run: 
+          name: Connect to our cluster
+          command: | 
+              aws eks update-kubeconfig --name "dashboard-$CIRCLE_WORKFLOW_ID" --region $AWS_REGION
+      - run:
+          name: Install kubectl
+          command: |
+              curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.16.8/2020-04-16/bin/linux/amd64/kubectl
+              chmod +x ./kubectl
+      - run:
+          name: Update Cloudfront and Clean up old stack 
+          command: |
+             # Re introducing this config to avoid WARNING: terminal is not fully functional
+             export AWS_PAGER=""
+             export URL=$(kubectl get service covid19dashboard-svc --output jsonpath='{.status.loadBalancer.ingress[0].hostname}') 
+             aws cloudformation deploy \
+                  --template-file .circleci/files/cloudfront.yml \
+                  --stack-name "dashboard-cloudfront"  \
+                  --parameter-overrides ElasticLoadBalancerDomain="${URL}" \
+                  --tags project=Covid19Dashboard 
+    
 workflows:
    main:
      jobs:
@@ -79,3 +146,6 @@ workflows:
        - deploy-kubernetes:
           requires:
             - docker/publish
+       - smoke-test:
+          requires:
+            - deploy-kubernetes

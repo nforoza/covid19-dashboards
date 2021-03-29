@@ -1,0 +1,55 @@
+Description: Covid 19 Dashboard Cloudfront 
+
+Parameters:
+  ElasticLoadBalancerDomain:
+    Description: ELB domain
+    Type: String
+
+Resources:
+  WebSocketOriginPolicy: 
+    Type: AWS::CloudFront::OriginRequestPolicy
+    Properties:
+      OriginRequestPolicyConfig: 
+        Name: Websockets 
+        CookiesConfig:
+          CookieBehavior: none
+        HeadersConfig:
+          HeaderBehavior: whitelist
+          Headers:
+            - Sec-WebSocket-Key
+            - Sec-WebSocket-Version
+            - Sec-WebSocket-Protocol
+            - Sec-WebSocket-Accept
+        QueryStringsConfig:
+          QueryStringBehavior: none
+
+  CloudFrontOriginAccessIdentity:
+    Type: "AWS::CloudFront::CloudFrontOriginAccessIdentity"
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: Origin Access Identity for Serverless Static Website
+
+  WebpageCDN:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+          - DomainName: !Sub "${ElasticLoadBalancerDomain}"
+            Id: webpage
+            CustomOriginConfig:
+              OriginProtocolPolicy: http-only
+        Enabled: True
+        DefaultCacheBehavior:
+          ForwardedValues:
+            QueryString: False
+          TargetOriginId: webpage
+          ViewerProtocolPolicy: allow-all
+          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+          OriginRequestPolicyId: !GetAtt WebSocketOriginPolicy.Id
+
+Outputs:
+  WorkflowID:
+    Value: !GetAtt WebpageCDN.DomainName
+    Description: Cloudfront CircleCi WorkflowID for deployment
+    Export:
+      Name: WorkflowID
