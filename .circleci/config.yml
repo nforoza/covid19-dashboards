@@ -3,6 +3,20 @@ version: 2.1
 orbs:
   docker: circleci/docker@1.5.0
 
+commands:
+  destroy-environment:
+    description: Destroy enviroment
+    parameters:
+      # Add parameter here 
+     workflow-id:
+        type: string 
+    steps:
+      - run:
+          name: Destroy environmet
+          when: on_fail
+          command: |
+           eksctl delete cluster "dashboard-<<parameters.workflow-id>>"
+
 jobs:
   lint:
     docker:
@@ -82,10 +96,17 @@ jobs:
           command: | 
               aws eks update-kubeconfig --name "dashboard-$CIRCLE_WORKFLOW_ID" --region $AWS_REGION
       - run:
+          name: Install eksctl
+          command: |
+              curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+              mv /tmp/eksctl /usr/bin
+              eksctl version 
+      - run:
           name: Install kubectl
           command: |
               curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.16.8/2020-04-16/bin/linux/amd64/kubectl
               chmod +x ./kubectl
+              mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$PATH:$HOME/bin
       - run:
           name: Get cluster loadbalancer external ip and run smoke test
           command: |
@@ -96,7 +117,9 @@ jobs:
                return 0 
               else
                return 1
-              fi 
+              fi
+      - destroy-environment:
+           workflow-id: $CIRCLE_WORKFLOW_ID
 
   cloudfront-update:
     docker:
@@ -105,7 +128,6 @@ jobs:
     steps:
       # Checkout code from git
       - checkout
-
       - run:
           name: Install dependencies
           command: |
@@ -149,3 +171,6 @@ workflows:
        - smoke-test:
           requires:
             - deploy-kubernetes
+       - cloudfront-update:
+          requires:
+            - smoke-test
