@@ -4,7 +4,6 @@ FROM ubuntu:20.04
 ENV TZ=America/Argentina/Buenos_Aires
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-This is a forced error 
 ## Step 1:
 # Create a working directory
 WORKDIR /app/
