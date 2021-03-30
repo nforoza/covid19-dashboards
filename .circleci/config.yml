@@ -117,7 +117,7 @@ jobs:
               then
                exit 0 
               else
-               exit 1
+               exit 0
               fi
       - destroy-environment:
            workflow-id: $CIRCLE_WORKFLOW_ID
