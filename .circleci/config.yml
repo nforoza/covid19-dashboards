@@ -106,13 +106,13 @@ jobs:
               curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.16.8/2020-04-16/bin/linux/amd64/kubectl
               chmod +x ./kubectl
               mv kubectl /usr/bin
+      - run: sleep 20   
       - run:
           name: Get cluster loadbalancer external ip and run smoke test
           command: |
               export URL=$(kubectl get service covid19dashboard-svc --output jsonpath='{.status.loadBalancer.ingress[0].hostname}')
               echo "Api URL ${URL}"
               STATUS=$(curl -s -o /dev/null -w '%{http_code}' $URL)
-              sleep 20
               if (curl -s ${URL} | grep "Bokeh Application"); # test if backend is running should return json with status ok
               then
                exit 0 
