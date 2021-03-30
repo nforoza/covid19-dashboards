@@ -87,9 +87,9 @@ jobs:
             kubectl apply -f .circleci/files/dashboard-deployment.yml
             kubectl get service
     - run:
-        name: Sleep for 20 seconds
+        name: Sleep for 60 seconds
         command: |
-            sleep 20
+            sleep 60
   
   smoke-test:
     docker:
@@ -116,7 +116,6 @@ jobs:
           command: |
               export URL=$(kubectl get service covid19dashboard-svc --output jsonpath='{.status.loadBalancer.ingress[0].hostname}')
               echo "Api URL ${URL}"
-              STATUS=$(curl -s -o /dev/null -w '%{http_code}' $URL)
               if (curl -s ${URL} | grep "Bokeh Application"); # test if backend is running should return json with status ok
               then
                exit 0 
