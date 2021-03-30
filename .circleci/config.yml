@@ -87,7 +87,7 @@ jobs:
             kubectl apply -f .circleci/files/dashboard-deployment.yml
             kubectl get service
     - run:
-        name: Sleep for 60 seconds
+        name: Sleep for 60 seconds awaiting infrastructure
         command: |
             sleep 60
   
@@ -120,7 +120,7 @@ jobs:
               then
                exit 0 
               else
-               exit 0
+               exit 1
               fi
       - destroy-environment:
            workflow-id: $CIRCLE_WORKFLOW_ID
@@ -149,16 +149,37 @@ jobs:
               chmod +x ./kubectl
               mv kubectl /usr/bin
       - run:
+          name: Install eksctl
+          command: |
+              curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+              mv /tmp/eksctl /usr/bin
+      - run:
           name: Update Cloudfront and Clean up old stack 
           command: |
-             # Re introducing this config to avoid WARNING: terminal is not fully functional
-             export AWS_PAGER=""
-             export URL=$(kubectl get service covid19dashboard-svc --output jsonpath='{.status.loadBalancer.ingress[0].hostname}') 
-             aws cloudformation deploy \
-                  --template-file .circleci/files/cloudfront.yml \
-                  --stack-name "dashboard-cloudfront"  \
-                  --parameter-overrides ElasticLoadBalancerDomain="${URL}" \
-                  --tags project=Covid19Dashboard 
+            # Re introducing this config to avoid WARNING: terminal is not fully functional
+            export AWS_PAGER=""
+             
+            #Getting New Kuberentes Cluster Load Balancer URL
+            export URL=$(kubectl get service covid19dashboard-svc --output jsonpath='{.status.loadBalancer.ingress[0].hostname}') 
+             
+            #Getting previus deployment WorkflowID to destroy
+            export OldWorkflowID=$(aws cloudformation list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
+              --no-paginate --output text)
+             
+            #Updating cloudfront
+            aws cloudformation deploy \
+                --template-file .circleci/files/cloudfront.yml \
+                --stack-name "dashboard-cloudfront"  \
+                --parameter-overrides ElasticLoadBalancerDomain="${URL}" WorkflowID="$CIRCLE_WORKFLOW_ID" \
+                --tags project=Covid19Dashboard 
+            
+            if [ ! -z "${OldWorkflowID}" ]
+            then
+                echo "Cleaning old cluster"
+                eksctl delete cluster "dashboard-${OldWorkflowID}"
+                echo "Finished cleaning previous stack"
+            fi
+            
     
 workflows:
    main:

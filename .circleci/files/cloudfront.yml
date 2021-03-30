@@ -4,6 +4,10 @@ Parameters:
   ElasticLoadBalancerDomain:
     Description: ELB domain
     Type: String
+  
+  WorkflowID:
+    Description: CircleCI WorkflowID
+    Type: String
 
 Resources:
   WebSocketOriginPolicy: 
@@ -49,7 +53,12 @@ Resources:
 
 Outputs:
   WorkflowID:
-    Value: !GetAtt WebpageCDN.DomainName
+    Value: !Sub ${WorkflowID}
     Description: Cloudfront CircleCi WorkflowID for deployment
     Export:
       Name: WorkflowID
+  Domain:
+    Value: !GetAtt WebpageCDN.DomainName
+    Description: Cloudfront Domain
+    Export:
+      Name: Domain
