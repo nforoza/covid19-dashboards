@@ -111,6 +111,8 @@ jobs:
           command: |
               export URL=$(kubectl get service covid19dashboard-svc --output jsonpath='{.status.loadBalancer.ingress[0].hostname}')
               echo "Api URL ${URL}"
+              STATUS=$(curl -s -o /dev/null -w '%{http_code}' $URL)
+              sleep 20
               if (curl -s ${URL} | grep "Bokeh Application"); # test if backend is running should return json with status ok
               then
                exit 0 
