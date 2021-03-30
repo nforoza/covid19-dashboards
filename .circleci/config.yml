@@ -12,10 +12,16 @@ commands:
         type: string 
     steps:
       - run:
+          name: Install eksctl
+          when: on_fail
+          command: |
+              curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+              mv /tmp/eksctl /usr/bin
+      - run:
           name: Destroy environmet
           when: on_fail
           command: |
-           eksctl delete cluster "dashboard-<<parameters.workflow-id>>"
+              eksctl delete cluster "dashboard-<<parameters.workflow-id>>"
 
 jobs:
   lint:
@@ -66,7 +72,7 @@ jobs:
             eksctl create cluster --name "dashboard-$CIRCLE_WORKFLOW_ID" --version 1.16 --region $AWS_REGION --nodegroup-name standard-workers --node-type t3.micro --nodes 1 --nodes-min 1 --nodes-max 1 --managed
      
     - run: 
-        name: Connect to our cluster
+        name: Connect to cluster
         command: | 
             aws eks update-kubeconfig --name "dashboard-$CIRCLE_WORKFLOW_ID" --region $AWS_REGION
 
@@ -75,11 +81,15 @@ jobs:
         command: |
             curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.16.8/2020-04-16/bin/linux/amd64/kubectl
             chmod +x ./kubectl
-            mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$PATH:$HOME/bin
+            mv kubectl /usr/bin
             kubectl version --short --client
             kubectl apply -f .circleci/files/dashboard-svc.yml
             kubectl apply -f .circleci/files/dashboard-deployment.yml
-            kubectl get service      
+            kubectl get service
+    - run:
+        name: Sleep for 20 seconds
+        command: |
+            sleep 20
   
   smoke-test:
     docker:
@@ -96,17 +106,11 @@ jobs:
           command: | 
               aws eks update-kubeconfig --name "dashboard-$CIRCLE_WORKFLOW_ID" --region $AWS_REGION
       - run:
-          name: Install eksctl
-          command: |
-              curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
-              mv /tmp/eksctl /usr/bin
-      - run:
           name: Install kubectl
           command: |
               curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.16.8/2020-04-16/bin/linux/amd64/kubectl
               chmod +x ./kubectl
               mv kubectl /usr/bin
-      - run: sleep 20   
       - run:
           name: Get cluster loadbalancer external ip and run smoke test
           command: |
@@ -132,12 +136,11 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            # your code here
             yum -y install tar
             yum -y install gzip
             yum -y install curl
       - run: 
-          name: Connect to our cluster
+          name: Connect to cluster
           command: | 
               aws eks update-kubeconfig --name "dashboard-$CIRCLE_WORKFLOW_ID" --region $AWS_REGION
       - run:
