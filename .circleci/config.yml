@@ -113,9 +113,9 @@ jobs:
               echo "Api URL ${URL}"
               if (curl -s ${URL} | grep "Bokeh Application"); # test if backend is running should return json with status ok
               then
-               return 0 
+               exit 0 
               else
-               return 1
+               exit 1
               fi
       - destroy-environment:
            workflow-id: $CIRCLE_WORKFLOW_ID
